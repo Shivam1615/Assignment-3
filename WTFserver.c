@@ -1,57 +1,131 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <pthread.h>
 #include <sys/socket.h>
-#include <netdb.h>
+#include <linux/in.h>
 #include <unistd.h>
-#include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <fcntl.h>
+#include <string.h>
+typedef struct
+{
+	int sock;
+	struct sockaddr address;
+	int addr_len;
+} connection_t;
+
+void * process(void * ptr)
+{
+	char * buffer;
+	int len;
+	connection_t * conn;
+	long addr = 0;
+
+	if (!ptr) pthread_exit(0); 
+	conn = (connection_t *)ptr;
+
+	char *command;
+	command = (char *)malloc(2*sizeof(char));
+
+	read(conn->sock,command,2);
+
+	if(strcmp(command,"a")==0){
+		int size;
+
+		read(conn->sock,&size,sizeof(int));
+		char *project=(char*)malloc((size+1)*sizeof(char));
+		read(conn->sock,project,size);
+
+		chdir(".server_repo");
+		chdir(project);
+		
+		// read length of file
+		read(conn->sock,&len,sizeof(int));
+		buffer = (char*)malloc((len+1)*sizeof(char));
+		buffer[len] = 0;
+		
+		read(conn->sock,buffer, len);
+
+		read(conn->sock,&size,sizeof(int));
+		char *name=(char*)malloc((size+1)*sizeof(char));
+		read(conn->sock,name,size);
+		
+		int fd=open(name, O_CREAT | O_WRONLY, 0600);	
+
+		if(fd ==-1){
+			printf("failed to create file");
+		}
+
+		write(fd,buffer,len);
+
+		free(buffer);
+		free(project);
+		free(name);
+		chdir("..");
+		chdir("..");
+	}else if(strcmp(command,"c")==0){
+		int size;
+		read(conn->sock,&size,sizeof(int));
+		char *project=(char*)malloc((size+1)*sizeof(char));
+		read(conn->sock,project,size);
+		chdir(".server_repo");
+		mkdir(project, ACCESSPERMS);
+		chdir(project);
+
+        	int fd=open(".Manifest",O_CREAT | O_WRONLY, 0600);
+        	if(fd==-1){
+                	printf("failed to make manifest");
+        	}
+        	write(fd,"0",1);
+        	write(fd,"\n",1);
+	        close(fd);
+
+		chdir("..");
+		chdir("..");
+		free(project);
+	}else if(strcmp(command,"d")==0){
+		int size;
+		read(conn->sock,&size,sizeof(int));
+		char *project=(char*)malloc((size+1)*sizeof(char));
+		read(conn->sock,project,size);
+		chdir(".server_repo");
+		
+		char command[50];
+		strcpy(command,"rm -r ");
+		strcat(command,project);
+		system(command);			
+
+		chdir("..");
+	}
+	
+	/* close socket and clean up */
+	close(conn->sock);
+	free(conn);
+	pthread_exit(0);
+}
 
 int main(int argc, char ** argv)
 {
-	int port;
 	int sock = -1;
 	struct sockaddr_in address;
-	struct hostent * host;
-	int len;
-	
-	/* checking commandline parameter */
-	if (argc < 2)
+	int port;
+	connection_t * connection;
+	pthread_t thread;
+
+	/* check for command line arguments */
+	if (argc != 2)
 	{
-		fprintf(stderr,"Not enough input");
+		fprintf(stderr, "usage: %s port\n", argv[0]);
 		return -1;
 	}
 
-	//configure client
-	if(strcmp(argv[1],"configure")==0){
-		if(argc!=4){
-			fprintf(stderr,"incorrect input amount");
-			exit(1);
-		}
-		int fd=open(".configure", O_CREAT | O_WRONLY, 0600);
-		if(fd==-1){
-			printf("Failed to configure");
-			exit(1);
-		}
-		write(fd,argv[2],strlen(argv[2]));
-		write(fd," ",1);
-		write(fd,argv[3],strlen(argv[3]));
-		close(fd);
-		return 1;
-	
+	/* obtain port number */
+	if (sscanf(argv[1], "%d", &port) <= 0)
+	{
+		fprintf(stderr, "%s: error: wrong parameter: port\n", argv[0]);
+		return -2;
 	}
-
-	FILE* conf = fopen(".configure","r");
-	if(conf==NULL){
-		printf("was not configured");
-		exit(1);
-	}
-
-	char hostname[50];
-	fscanf(conf,"%s",hostname);
-	fscanf(conf,"%d",&port);
-
-
-
 
 	/* create socket */
 	sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -61,29 +135,41 @@ int main(int argc, char ** argv)
 		return -3;
 	}
 
-	/* connect to server */
+	/* bind socket to port */
 	address.sin_family = AF_INET;
+	address.sin_addr.s_addr = INADDR_ANY;
 	address.sin_port = htons(port);
-	host = gethostbyname(hostname);
-	if (!host)
+	if (bind(sock, (struct sockaddr *)&address, sizeof(struct sockaddr_in)) < 0)
 	{
-		fprintf(stderr, "error: unknown host \n");
+		fprintf(stderr, "%s: error: cannot bind socket to port %d\n", argv[0], port);
 		return -4;
 	}
-	memcpy(&address.sin_addr, host->h_addr_list[0], host->h_length);
-	if (connect(sock, (struct sockaddr *)&address, sizeof(address)))
+
+	/* listen on port */
+	if (listen(sock, 5) < 0)
 	{
-		fprintf(stderr, "error: cannot connect to host \n");
+		fprintf(stderr, "%s: error: cannot listen on port\n", argv[0]);
 		return -5;
 	}
 
-	/* send text to server */
-	len = strlen(argv[1]);
-	write(sock,&len,sizeof(int));
-	write(sock, argv[1], 100);
-
-	/* close socket */
-	close(sock);
-
+	printf("%s: ready and listening\n", argv[0]);
+	
+	while (1)
+	{
+		/* accept incoming connections */
+		connection = (connection_t *)malloc(sizeof(connection_t));
+		connection->sock = accept(sock, &connection->address, &connection->addr_len);
+		if (connection->sock <= 0)
+		{
+			free(connection);
+		}
+		else
+		{
+			/* start a new thread but do not wait for it */
+			pthread_create(&thread, 0, process, (void *)connection);
+			pthread_detach(thread);
+		}
+	}
+	
 	return 0;
 }
