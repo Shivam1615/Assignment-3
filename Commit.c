@@ -154,19 +154,46 @@ int j;
 		printf("The versions do not match from the clients manifest version and the server manifest version.\nPlease update the local project first.\n");
 	}
 	
-	/*else if(atoi(versionNumber[0]) == atoi(versionNumber2[0])){
-		for(i = 0; i < index2; i++){
-			for(j = 0; j < index; j++){
-				if((strcmp(fileName[j], fileName2[i]) == 0) && atoi(versionNumber[j+1]) != atoi(versionNumber2[i+1])){
-   	                                    printf("Allow the commit to happen.Client has newer version of the file.\n");
-                                            break;
+	else {
+                for(i = 0; i < index2; i++){
+                        for(j = 0; j < index; j++){
+                                if(strcmp(fileName[j], fileName2[i]) != 0){
+                                        counter++;
+                                        /*printf("These files are not in the client %s %s.\n", fileName[j], fileName2[i]);
+                                        printf("File should be removed from the repository.\n");
+                                        break;
+                                        */
                                 }
-			}
-	    	}
-	}*/
+                                else{
+                                        printf("These files are in the server and the client %s %s.\n", fileName[j], fileName2[i]);
+                                }
+                        }
+                }
+                if(counter == index || counter == index2){
+                        printf("File should be removed from the repository.\n");
 
-	/*if(strcmp(fileName[3], fileName2[3]) == 0){
-		printf("good.\n");
-	}*/
+                }
+                counter = 0;
+                for(i = 0; i < index; i++){
+                        for(j = 0; j < index2; j++){
+                                if(strcmp(fileName[i], fileName2[j]) != 0){
+                                        counter++;
+                                        /*printf("These files are not in the server %s %s.\n", fileName[i], fileName2[j]);
+                                        break;
+                                        */
+                                }else{
+                                printf("These files are in the server and the client %s %s .\n", fileName[i], fileName2[j]);
+                        }
+                        
+
+                }
+
+                if(counter == index || counter == index2){
+                        printf("File should be added to the repository.\n");
+                }
+
+        }
+        
+        }
 
 }
