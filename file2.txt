@@ -1,0 +1,5 @@
+2
+2 covfefe/readme.md fb6edbc7ef26d06fd4acaa62456a4525c707e5dd6d3abb1ca2a6ee4316784fee
+2 covfefe/my_code.py 33b4cf88a1ca8c0a7a2af3c9e91b1ac7ec98112699868a85375d33e0bb0fc33c
+1 covfefe/images/tweet.png 3e639f1a14ac913553417f0d2564edb9129e85117062a8b16dcc4fa305374a2b
+1 covfefe/data/memes.csv 5c03b07f29318a1e3546ebfb3ffc98092704113d2e6103022354a3982ed52e87                                                                              
