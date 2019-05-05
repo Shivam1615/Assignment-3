@@ -10,7 +10,6 @@
 #include <openssl/sha.h>
 
 void sendFile(char *dirName,char *name,int sock){
-	chdir(dirName);
 	int fSize;
 	int pSize=strlen(dirName);
 	int nSize=strlen(name);
@@ -23,8 +22,7 @@ void sendFile(char *dirName,char *name,int sock){
 	read(fd,file,fSize);
 	*(file+fSize)='\0';
 	close(fd);
-	chdir("..");
-	write(sock,"a",2);
+
 	write(sock,&pSize,sizeof(int));
 	write(sock,dirName,pSize);	
 	write(sock,&fSize,sizeof(int));
@@ -33,6 +31,7 @@ void sendFile(char *dirName,char *name,int sock){
 	write(sock,name,nSize);
 
 }
+
 
 char *hash(char *string){
 
@@ -49,6 +48,119 @@ char *hash(char *string){
 		strcat(output,code);
         }
 	return output;
+}
+void commit(char * dirName){
+	struct stat check;
+	chdir(dirName);
+	int mSize;
+	int fd=open(".Manifest", O_RDONLY);
+	if(stat(".Manifest",&check)==0)
+        	mSize=check.st_size;
+	char *man=(char*)malloc(sizeof(char)*mSize+1);
+	read(fd,man,mSize);
+	*(man+mSize)='\0';
+	close(fd);
+	chdir("..");
+
+	int arraySize=0;
+	int i;
+	for(i=0;i<mSize-1;i++){
+
+        	if(man[i]=='\n'){
+                	arraySize++;
+        	}
+
+	}
+
+	char *version[arraySize];
+	char *fileName[arraySize-1];
+	char *Hashcontent[arraySize-1];
+
+	char* token = strtok(man, " \n");
+	char *temp=(char*)malloc(strlen(token)+1);
+	strcpy(temp,token);
+	version[0]=temp;
+	token=strtok(NULL, " \n");
+	int split=0;
+	int index=0;
+	while (token) {
+        	char *temp=(char*)malloc(strlen(token)+1);
+        	strcpy(temp,token);
+
+        	if(split==0){
+                	version[index+1]=temp;
+                	token = strtok(NULL, " \n");
+                	split++;
+        	}else if(split==1){
+                	fileName[index]=temp;
+                	token = strtok(NULL, " \n");
+                	split++;
+        	}else if(split==2){
+                	Hashcontent[index]=temp;
+                	token = strtok(NULL, " \n");
+                	split=0;
+                	index++;
+        	}
+	}
+	chdir(dirName);
+	remove(".Commit");
+	fd=open(".Commit", O_CREAT | O_WRONLY);
+	
+	int versionNumber=atoi(version[0]);
+	versionNumber++;
+	
+	char newVersion[3];
+	strcpy(newVersion,"");
+	sprintf(newVersion,"%d",versionNumber);
+
+	write(fd, newVersion,strlen(newVersion));
+	write(fd, "\n",1);
+	int k;
+
+	for(k=0;k<arraySize-1;k++){
+	
+		versionNumber=atoi(version[k+1]);
+		versionNumber++;	
+		strcpy(newVersion,"");
+		sprintf(newVersion,"%d",versionNumber);
+	
+		int fSize;
+		char path[50];
+		strcpy(path,fileName[k]);
+		char name[20];
+		strcpy(name,&path[strlen(dirName)+1]);
+	
+		int fd2=open(name,O_RDWR);
+
+		if(stat(name,&check)==0)
+        		fSize=check.st_size;
+		char *file=(char*)malloc(sizeof(char)*fSize+1);
+		read(fd2,file,fSize);
+		*(file+fSize)='\0';
+		close(fd2);
+
+                char *hashCode=(char*)malloc(sizeof(char)*41);
+                hashCode=hash(file);
+ 
+		if(strcmp(hashCode,Hashcontent[k])==0){
+
+		}else{
+ 
+        	write(fd,newVersion,strlen(newVersion));
+        	write(fd," ",1);
+
+        	write(fd,fileName[k],strlen(fileName[k]));
+        	write(fd," ",1);
+
+        	write(fd,hash(file),40);
+        	write(fd,"\n",1);
+		}
+		
+	}
+
+	write(fd,"\n",1);
+	close(fd);
+	chdir("..");
 }
 
 void addOrRemoveFile(char *dirName,char *path,char command){
@@ -89,15 +201,14 @@ char *fileName[arraySize-1];
 char *Hashcontent[arraySize-1];
 
 char* token = strtok(man, " \n");
-char *temp=(char*)malloc(strlen(token));
+char *temp=(char*)malloc(strlen(token)+1);
 strcpy(temp,token);
 version[0]=temp;
 token=strtok(NULL, " \n");
 int split=0;
 int index=0;
 while (token) {
-
-	char *temp=(char*)malloc(strlen(token));
+	char *temp=(char*)malloc(strlen(token)+1);
 	strcpy(temp,token);
 	
 	if(split==0){
@@ -113,8 +224,7 @@ while (token) {
 		token = strtok(NULL, " \n");
 		split=0;
 		index++;
-	}
-	
+	}	
 }
 
 if(command=='a'){
@@ -123,7 +233,7 @@ write(fd, version[0],strlen(version[0]));
 write(fd, "\n",1);
 int inManifest=0;
 int k;
-printf("%d\n",arraySize);
+
 for(k=0;k<arraySize-1;k++){
 	
 	write(fd,version[k+1],strlen(version[k+1]));
@@ -142,7 +252,7 @@ for(k=0;k<arraySize-1;k++){
 }
 
 if(inManifest==0){
-	write(fd,"1",1);
+	write(fd,"0",1);
 	write(fd, " ",1);
 	write(fd,path,strlen(path));
 	write(fd," ",1);
@@ -152,7 +262,6 @@ if(inManifest==0){
 
 write(fd,"\n",1);
 close(fd);
-printf("a");
 }
 if(command=='r'){
 remove(".Manifest");
@@ -178,7 +287,7 @@ for(k=0;k<arraySize-1;k++){
 write(fd,"\n",1);
 
 close(fd);
-printf("r");
+
 }
 
 chdir("..");
@@ -281,7 +390,8 @@ int main(int argc, char ** argv)
 	}
 
 	/* send text to server */
-	if(strcmp(argv[1],"send")==0){
+	if(strcmp(argv[1],"push")==0){
+		write(sock,"p",2);	
 		sendFile(argv[2],argv[3],sock);
 	}else if(strcmp(argv[1],"add")==0){
 		addOrRemoveFile(argv[2],argv[3],'a');
@@ -291,6 +401,8 @@ int main(int argc, char ** argv)
 		createProject(argv[2],sock);
 	}else if(strcmp(argv[1],"destroy")==0){
 		destroyProject(argv[2],sock);
+	}else if(strcmp(argv[1],"commit")==0){
+		commit(argv[2]);
 	}
 	
 	/* close socket */
