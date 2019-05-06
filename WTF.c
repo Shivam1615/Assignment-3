@@ -9,26 +9,25 @@
 #include <fcntl.h>
 #include <openssl/sha.h>
 
-void sendFile(char *dirName,char *name,int sock){
-	int fSize;
-	int pSize=strlen(dirName);
+void sendFile(char *name,int sock){
+
 	int nSize=strlen(name);
+	write(sock,&nSize,sizeof(int));
+	write(sock,name,nSize);
+
+	int fSize;
 	struct stat check;
-	int fd =open(name, O_RDONLY);
+	int fd=open(name, O_RDONLY);
 	if(stat(name,&check)==0)
 		fSize=check.st_size;
-
-	char *file=(char*)malloc(sizeof(char)*fSize+1);
+	char *file=(char*)malloc(fSize+1);
 	read(fd,file,fSize);
 	*(file+fSize)='\0';
 	close(fd);
 
-	write(sock,&pSize,sizeof(int));
-	write(sock,dirName,pSize);	
 	write(sock,&fSize,sizeof(int));
-	write(sock, file, fSize);
-	write(sock, &nSize,sizeof(int));
-	write(sock,name,nSize);
+	write(sock,file,fSize);
+	
 
 }
 
@@ -109,7 +108,7 @@ void commit(char * dirName){
 	int versionNumber=atoi(version[0]);
 	versionNumber++;
 	
-	char newVersion[3];
+	char newVersion[4];
 	strcpy(newVersion,"");
 	sprintf(newVersion,"%d",versionNumber);
 
@@ -142,10 +141,10 @@ void commit(char * dirName){
                 char *hashCode=(char*)malloc(sizeof(char)*41);
                 hashCode=hash(file);
  
-		if(strcmp(hashCode,Hashcontent[k])==0){
+/*		if(strcmp(hashCode,Hashcontent[k])==0){
 
 		}else{
- 
+ */
         	write(fd,newVersion,strlen(newVersion));
         	write(fd," ",1);
 
@@ -154,7 +153,7 @@ void commit(char * dirName){
 
         	write(fd,hash(file),40);
         	write(fd,"\n",1);
-		}
+//		}
 		
 	}
 
@@ -391,8 +390,51 @@ int main(int argc, char ** argv)
 
 	/* send text to server */
 	if(strcmp(argv[1],"push")==0){
-		write(sock,"p",2);	
-		sendFile(argv[2],argv[3],sock);
+		write(sock,"p",2);
+		
+		int pSize=strlen(argv[2]);
+		write(sock,&pSize,sizeof(int));
+		write(sock,argv[2],pSize);
+		
+		struct stat check;	
+		chdir(argv[2]);
+		int mSize;
+		int fd=open(".Commit", O_RDONLY);
+
+		if(fd==-1){
+			printf("must commit first");
+			return 1;
+		}
+
+		if(stat(".Commit",&check)==0)
+        	mSize=check.st_size;
+		char *man=(char*)malloc(sizeof(char)*mSize+1);
+		read(fd,man,mSize);
+		*(man+mSize)='\0';
+		close(fd);
+		chdir("..");
+		int length=0;
+		int i;
+		for(i=0;i<mSize-1;i++){
+
+        		if(man[i]=='\n'){
+                	length++;
+        		}
+
+		}
+		length--;
+		write(sock,&length,sizeof(int));
+		char *token=strtok(man, " \n");
+		token=strtok(NULL," \n");
+		while(token){
+			token=strtok(NULL," \n");
+			
+			sendFile(token,sock);
+		
+			token=strtok(NULL," \n");
+			token=strtok(NULL," \n");
+	
+		}
 	}else if(strcmp(argv[1],"add")==0){
 		addOrRemoveFile(argv[2],argv[3],'a');
 	}else if(strcmp(argv[1],"remove")==0){
@@ -403,6 +445,17 @@ int main(int argc, char ** argv)
 		destroyProject(argv[2],sock);
 	}else if(strcmp(argv[1],"commit")==0){
 		commit(argv[2]);
+	}else if(strcmp(argv[1],"upgrade")==0){
+		write(sock,"u",2);
+		int length=strlen(argv[2]);
+		
+		write(sock,&length,sizeof(int));
+		write(sock,argv[2],length);
+
+		read(sock,&length,sizeof(int));
+		char *file=(char*)malloc(sizeof(char)*length+1);
+		read(sock,file,length);
+		printf("%s\n",file);
 	}
 	
 	/* close socket */
