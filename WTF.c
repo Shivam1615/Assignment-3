@@ -103,7 +103,7 @@ void commit(char * dirName){
 	}
 	chdir(dirName);
 	remove(".Commit");
-	fd=open(".Commit", O_CREAT | O_WRONLY);
+	fd=open(".Commit", O_CREAT | O_WRONLY,0600);
 	
 	int versionNumber=atoi(version[0]);
 	versionNumber++;
@@ -227,7 +227,7 @@ while (token) {
 }
 
 if(command=='a'){
-fd=open(".Manifest", O_CREAT | O_RDWR, 0400);
+fd=open(".Manifest", O_CREAT | O_RDWR, 0600);
 write(fd, version[0],strlen(version[0]));
 write(fd, "\n",1);
 int inManifest=0;
@@ -423,6 +423,7 @@ int main(int argc, char ** argv)
 
 		}
 		length--;
+
 		write(sock,&length,sizeof(int));
 		char *token=strtok(man, " \n");
 		token=strtok(NULL," \n");
@@ -456,6 +457,17 @@ int main(int argc, char ** argv)
 		char *file=(char*)malloc(sizeof(char)*length+1);
 		read(sock,file,length);
 		printf("%s\n",file);
+	}else if(strcmp(argv[1],"rollback")==0){
+		write(sock,"r",2);
+		int length=strlen(argv[2]);
+		int back=atoi(argv[3]);
+	
+		write(sock,&length,sizeof(int));
+		write(sock,argv[2],length);
+
+		write(sock,&back,sizeof(int));
+
+
 	}
 	
 	/* close socket */
