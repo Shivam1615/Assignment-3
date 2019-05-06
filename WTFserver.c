@@ -17,7 +17,50 @@ typedef struct
 	int addr_len;
 } connection_t;
 
-int getVersion(char *project){
+void rollback(int new){
+
+        struct stat check;
+        int vSize;
+        int fd=open(".Version", O_RDONLY);
+        if(stat(".Version",&check)==0)
+                vSize=check.st_size;
+        char *vers=(char*)malloc(sizeof(char)*vSize+1);
+        read(fd,vers,vSize);
+        *(vers+vSize)='\0';
+        close(fd);
+
+        char *token=strtok(vers," \n");
+        int old=atoi(token);
+
+	char delete[15];
+
+	char version[4];
+	strcpy(version,"");
+
+	int i;
+	for(i=old;i>new;i--){
+		strcpy(delete,"rm -r version");
+		sprintf(version,"%d",i);
+		strcat(delete,version);
+		system(delete);
+	
+	}
+
+
+	sprintf(version,"%d",new);
+
+	
+        remove(".Version");
+
+        int fd2=open(".Version", O_CREAT | O_WRONLY, 0600);
+        write(fd2,version,strlen(version));
+        write(fd2,"\n",1);
+        close(fd2);
+
+
+        FILE *history=fopen(".History","a");
+        fprintf(history,"Rollback:%s\n",version);
+        fclose(history);
 
 }
 int version(){
@@ -47,6 +90,10 @@ int version(){
 	write(fd2,newVersion,strlen(newVersion));
 	write(fd2,"\n",1);
 	close(fd2);
+
+	FILE *history=fopen(".History","a");
+	fprintf(history,"push:%s\n",newVersion);
+	fclose(history);
 	return x;
 
 }
@@ -121,11 +168,19 @@ void * process(void * ptr)
 
         	int fd=open(".Version",O_CREAT | O_WRONLY, 0600);
         	if(fd==-1){
-                	printf("failed to make History");
+                	printf("failed to make version");
         	}
         	write(fd,"0",1);
         	write(fd,"\n",1);
 	        close(fd);
+
+                int fd2=open(".History",O_CREAT | O_WRONLY, 0600);
+                if(fd==-1){
+                        printf("failed to make History");
+                }
+                write(fd2,"create: 0",9);
+                write(fd2,"\n",1);
+                close(fd2);
 
 		chdir("..");
 		chdir("..");
@@ -164,6 +219,24 @@ void * process(void * ptr)
 		write(conn->sock,file,size);	
 
 		chdir("..");
+		
+	}else if(strcmp(command,"r")==0){
+
+                int length;
+                read(conn->sock,&length,sizeof(int));
+                char *project=(char*)malloc((length+1)*sizeof(char));
+                read(conn->sock,project,length);
+		int back;
+		read(conn->sock,&back,sizeof(int));
+	
+		chdir(".server_repo");
+		chdir(project);
+
+		rollback(back);
+	
+
+		chdir("..");
+		chdir("..");	
 		
 	}
 	
@@ -241,3 +314,4 @@ int main(int argc, char ** argv)
 	
 	return 0;
 }
+
