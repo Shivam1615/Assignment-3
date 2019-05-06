@@ -27,8 +27,6 @@ void sendFile(char *name,int sock){
 
 	write(sock,&fSize,sizeof(int));
 	write(sock,file,fSize);
-	
-
 }
 
 
@@ -294,6 +292,20 @@ chdir("..");
 }
 
 void createProject(char *name,int sock){
+
+
+	DIR* dir = opendir("mydir");
+	if (dir)
+	{
+    		/* Directory exists. */
+    		closedir(dir);
+		printf("The project already exists");
+	}
+	else if (ENOENT == errno)
+	{
+    		/* Directory does not exist. */
+	}
+
 	mkdir(name, ACCESSPERMS);
 	int size=strlen(name);
 	write(sock,"c",2);
@@ -412,6 +424,15 @@ int main(int argc, char ** argv)
 		read(fd,man,mSize);
 		*(man+mSize)='\0';
 		close(fd);
+
+		
+
+		remove(".Manifest");		
+		int fd3=open(".Manifest",O_CREAT | O_WRONLY, 0600);
+		write(fd3,man,mSize);
+		close(fd3);
+
+
 		chdir("..");
 		int length=0;
 		int i;
@@ -423,8 +444,15 @@ int main(int argc, char ** argv)
 
 		}
 		length--;
-
 		write(sock,&length,sizeof(int));
+
+		char manifest[20];
+		strcpy(manifest,"");
+		strcat(manifest,argv[2]);
+		strcat(manifest,"/.Manifest");	
+
+		sendFile(manifest,sock);
+	
 		char *token=strtok(man, " \n");
 		token=strtok(NULL," \n");
 		while(token){
