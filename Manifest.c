@@ -8,7 +8,6 @@
 #include<ctype.h>
 
 void ComparingFiles(char *file1, char *file2);
-void CompareManifestFiles(char *versionNumber, char *fileName, char *HashContent, char *versionNumber2, char *fileName2, char *HashContent2, char *fileUpdate, char *fileUpdate2, int fd, int fd2);
 
 int main(int argc, char **argv){
 
@@ -236,10 +235,4 @@ while (token2) {
 				printf("Up to date.\n");
 			}
 		}
-}
-
-
-void CompareManifestFiles(char *versionNumber, char *fileName, char *HashContent, char *versionNumber2, char *fileName2, char *HashContent2, char *fileUpdate, char *fileUpdate2 , int fd, int fd2){
-	
-	
 }
