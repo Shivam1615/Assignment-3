@@ -132,7 +132,7 @@ void * process(void * ptr)
 	chdir(folder);
 
 	int i;
-	for(i=0;i<files;i++){
+	for(i=0;i<files+1;i++){
 		int nSize;
 		read(conn->sock,&nSize,sizeof(int));
 		char *path=(char*)malloc((nSize+1));
@@ -314,4 +314,3 @@ int main(int argc, char ** argv)
 	
 	return 0;
 }
-
