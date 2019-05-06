@@ -151,7 +151,7 @@ void commit(char * dirName){
 
         	write(fd,hash(file),40);
         	write(fd,"\n",1);
-//		}
+		/*}*/
 		
 	}
 
