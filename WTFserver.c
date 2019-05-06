@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <linux/in.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -14,6 +16,40 @@ typedef struct
 	struct sockaddr address;
 	int addr_len;
 } connection_t;
+
+int getVersion(char *project){
+
+}
+int version(){
+	
+	struct stat check;
+	int vSize;
+	int fd=open(".Version", O_RDONLY);
+	if(stat(".Version",&check)==0)
+		vSize=check.st_size;
+	char *vers=(char*)malloc(sizeof(char)*vSize+1);
+	read(fd,vers,vSize);
+	*(vers+vSize)='\0';
+	close(fd);
+
+	char *token=strtok(vers," \n");
+	int x=atoi(token);
+
+	x++;
+
+	char newVersion[4];
+	strcpy(newVersion,"");
+	sprintf(newVersion,"%d",x);
+
+	remove(".Version");
+
+	int fd2=open(".Version", O_CREAT | O_WRONLY, 0600);
+	write(fd2,newVersion,strlen(newVersion));
+	write(fd2,"\n",1);
+	close(fd2);
+	return x;
+
+}
 
 void * process(void * ptr)
 {
@@ -30,40 +66,50 @@ void * process(void * ptr)
 
 	read(conn->sock,command,2);
 
-	if(strcmp(command,"a")==0){
-		int size;
+	if(strcmp(command,"p")==0){
+	
+	int pSize;
+	read(conn->sock,&pSize,sizeof(int));
+	char *project=(char*)malloc((pSize+1));
+	read(conn->sock,project,pSize);
+	int files;
+	read(conn->sock,&files,sizeof(int));
+	chdir(".server_repo");
+	chdir(project);
 
-		read(conn->sock,&size,sizeof(int));
-		char *project=(char*)malloc((size+1)*sizeof(char));
-		read(conn->sock,project,size);
+	char folder[10];
+	strcpy(folder,"");
+	sprintf(folder,"version%d",version());
 
-		chdir(".server_repo");
-		chdir(project);
-		
-		// read length of file
-		read(conn->sock,&len,sizeof(int));
-		buffer = (char*)malloc((len+1)*sizeof(char));
-		buffer[len] = 0;
-		
-		read(conn->sock,buffer, len);
+	mkdir(folder,0700);
+	chdir(folder);
 
-		read(conn->sock,&size,sizeof(int));
-		char *name=(char*)malloc((size+1)*sizeof(char));
-		read(conn->sock,name,size);
-		
-		int fd=open(name, O_CREAT | O_WRONLY, 0600);	
+	int i;
+	for(i=0;i<files;i++){
+		int nSize;
+		read(conn->sock,&nSize,sizeof(int));
+		char *path=(char*)malloc((nSize+1));
+		read(conn->sock,path,nSize);
 
-		if(fd ==-1){
-			printf("failed to create file");
-		}
+		char *name=&path[pSize+1];
 
-		write(fd,buffer,len);
+		int fSize;
+		read(conn->sock,&fSize,sizeof(int));
+		char *file=(char*)malloc(fSize+1);
+		read(conn->sock,file,fSize);
+		remove(name);
+		int fd=open(name, O_CREAT | O_WRONLY, 0600);
+		if(fd==-1){ printf("failed to create file");}
+		write(fd,file,fSize);
+		close(fd);
 
-		free(buffer);
-		free(project);
-		free(name);
-		chdir("..");
-		chdir("..");
+	}
+	
+	chdir("..");
+	chdir("..");
+	chdir("..");
+	
+
 	}else if(strcmp(command,"c")==0){
 		int size;
 		read(conn->sock,&size,sizeof(int));
@@ -73,9 +119,9 @@ void * process(void * ptr)
 		mkdir(project, ACCESSPERMS);
 		chdir(project);
 
-        	int fd=open(".Manifest",O_CREAT | O_WRONLY, 0600);
+        	int fd=open(".Version",O_CREAT | O_WRONLY, 0600);
         	if(fd==-1){
-                	printf("failed to make manifest");
+                	printf("failed to make History");
         	}
         	write(fd,"0",1);
         	write(fd,"\n",1);
@@ -97,6 +143,28 @@ void * process(void * ptr)
 		system(command);			
 
 		chdir("..");
+	}else if(strcmp(command,"u")==0){
+		int length;
+		read(conn->sock,&length,sizeof(int));
+		char *path=(char*)malloc((length+1)*sizeof(char));
+		read(conn->sock,path,length);
+			
+		chdir(".server_repo");
+		struct stat check;
+		int size;
+		int fd=open(path, O_RDONLY,0600);
+		if(stat(path,&check)==0)
+			size=check.st_size;
+		char *file=(char*)malloc(sizeof(char)*size+1);
+		read(fd,file,size);
+		*(file+size)='\0';
+		close(fd);	
+
+		write(conn->sock,&size,sizeof(int));
+		write(conn->sock,file,size);	
+
+		chdir("..");
+		
 	}
 	
 	/* close socket and clean up */
