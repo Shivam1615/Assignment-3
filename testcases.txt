@@ -1,0 +1,43 @@
+Shivam Patel
+
+Dhanush Gandham
+
+Test Cases
+---------------------------------------------------------
+
+INPUT: ./WTF configure kill.cs.rutgers.edu 9876
+
+CLIENT OUPUT: Success
+
+---------------------------------------------------------
+
+INPUT: ./WTF create project1
+
+CLIENT OUTPUT:  Successfully created.
+
+---------------------------------------------------------
+
+INPUT: ./client add project1 file1.txt
+
+CLIENT OUTPUT: Successfully added the project.
+
+---------------------------------------------------------
+
+INPUT: ./client add project1 file1.txt
+
+CLIENT OUTPUT: File name already exists.
+
+---------------------------------------------------------
+
+INPUT: ./client destroy project1 file1.txt
+
+CLIENT OUTPUT: Successfully destroyed.
+
+---------------------------------------------------------
+
+INPUT: ./client destroy project1 file1.txt
+
+CLIENT OUTPUT: Project already exists.
+
+---------------------------------------------------------
+
