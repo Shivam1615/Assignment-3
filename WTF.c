@@ -117,7 +117,7 @@ while (token2) {
 	char pointer1[5] = "A";
 	char pointer0[5] = "D";
 	
-	int count = 0; //for up to date
+	int count = 0; /*for up to date*/
 	
 	if(atoi(versionNumber2[0]) > atoi(versionNumber[0])){
 
@@ -130,7 +130,7 @@ while (token2) {
 				int found=0;
 				for(j = 0; j < index; j++){	
 					if(((strcmp(fileName[j], fileName2[i]) == 0) && atoi(versionNumber2[i+1]) > atoi(versionNumber[j+1]) && atoi(versionNumber[0]) != atoi(versionNumber2[0]))){
-						//printf("M %s %s %s \n", versionNumber2[i+1], fileName2[i],  HashContent2[i]);
+						/*printf("M %s %s %s \n", versionNumber2[i+1], fileName2[i],  HashContent2[i]);*/
 						write(fd3, pointer3, strlen(pointer3));
 						write(fd3, pointer, strlen(pointer));
 						write(fd3, versionNumber2[j+1], strlen(versionNumber2[j+1]));
@@ -144,7 +144,7 @@ while (token2) {
 					}
 				}
 				if(found==0){
-					//printf("A %s %s %s \n",versionNumber2[i+1],fileName2[i], HashContent2[i]);
+					/*printf("A %s %s %s \n",versionNumber2[i+1],fileName2[i], HashContent2[i]);*/
 					write(fd3, pointer1, strlen(pointer1));
                                         write(fd3, pointer, strlen(pointer));
                                         write(fd3, versionNumber2[i+1], strlen(versionNumber2[i+1]));
@@ -165,7 +165,7 @@ while (token2) {
 				}
 				if(found==0){
 					if(strcmp(fileName[i], fileName2[i]) != 0 && atoi(versionNumber[i]) != atoi(versionNumber2[i])){
-						//printf("D %s %s %s \n", versionNumber[i], fileName[i], HashContent[i]);
+						/*printf("D %s %s %s \n", versionNumber[i], fileName[i], HashContent[i]);*/
 						write(fd3, pointer0, strlen(pointer0));
                                         	write(fd3, pointer, strlen(pointer));
                                         	write(fd3, versionNumber[i], strlen(versionNumber[i]));
@@ -175,7 +175,7 @@ while (token2) {
                                         	write(fd3, HashContent[i], strlen(HashContent[i]));
                                         	write(fd3, pointer2, strlen(pointer2));
 					}else{
-						//printf("U %s %s %s \n", versionNumber[i], fileName[i], HashContent[i]);
+						/*printf("U %s %s %s \n", versionNumber[i], fileName[i], HashContent[i]);*/
 						/*write(fd3, pointer4, strlen(pointer4));
                                                 write(fd3, pointer, strlen(pointer));
                                                 write(fd3, versionNumber[i], strlen(versionNumber[i]));
