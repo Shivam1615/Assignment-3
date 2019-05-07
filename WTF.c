@@ -574,7 +574,7 @@ int main(int argc, char ** argv)
 		return -1;
 	}
 
-	//configure client
+	/*configure client*/
 	if(strcmp(argv[1],"configure")==0){
 		if(argc!=4){
 			fprintf(stderr,"incorrect input amount");
