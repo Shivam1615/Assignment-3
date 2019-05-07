@@ -17,27 +17,69 @@ CLIENT OUTPUT:  Successfully created.
 
 ---------------------------------------------------------
 
-INPUT: ./client add project1 file1.txt
+INPUT: ./client add project1 project1/file1.txt
 
 CLIENT OUTPUT: Successfully added the project.
 
 ---------------------------------------------------------
 
-INPUT: ./client add project1 file1.txt
+INPUT: ./client add project1 project1/file1.txt
 
 CLIENT OUTPUT: File name already exists.
 
 ---------------------------------------------------------
 
-INPUT: ./client destroy project1 file1.txt
+INPUT: ./client destroy project1
 
 CLIENT OUTPUT: Successfully destroyed.
 
 ---------------------------------------------------------
 
-INPUT: ./client destroy project1 file1.txt
+INPUT: ./client destroy project1
 
 CLIENT OUTPUT: Project already exists.
 
 ---------------------------------------------------------
+INPUT: ./client commit project1
+
+CLIENT OUTPUT: Successfully commit.
+
+---------------------------------------------------------
+
+INPUT: ./client push project1
+
+CLIENT OUTPUT: Project pushed.
+
+---------------------------------------------------------
+INPUT: ./client history project1
+
+CLIENT OUTPUT: create:0
+                push:1
+
+---------------------------------------------------------
+
+INPUT: ./client commit project1
+
+CLIENT OUTPUT: Project commited.
+
+---------------------------------------------------------
+INPUT: ./client push project1
+
+CLIENT OUTPUT: Successfully push.
+
+---------------------------------------------------------
+
+INPUT: ./client rollback project1 1
+
+CLIENT OUTPUT: rolled back.
+
+---------------------------------------------------------
+INPUT: ./client history project1
+
+CLIENT OUTPUT: create:0
+                push:1
+                push:2
+                rollback:1
+
+----------------------------------------------------------
 
