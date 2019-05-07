@@ -8,6 +8,8 @@
 #include <string.h>
 #include <fcntl.h>
 #include <openssl/sha.h>
+#include <dirent.h>
+
 
 void sendFile(char *name,int sock){
 
@@ -139,19 +141,22 @@ void commit(char * dirName){
                 char *hashCode=(char*)malloc(sizeof(char)*41);
                 hashCode=hash(file);
  
-/*		if(strcmp(hashCode,Hashcontent[k])==0){
+		if(strcmp(hashCode,Hashcontent[k])==0){
+
+		write(fd,version[k],strlen(version[k]));
+		write(fd," ",1);
 
 		}else{
- */
+ 
         	write(fd,newVersion,strlen(newVersion));
         	write(fd," ",1);
-
+		}
         	write(fd,fileName[k],strlen(fileName[k]));
         	write(fd," ",1);
 
-        	write(fd,hash(file),40);
+        	write(fd,hashCode,40);
         	write(fd,"\n",1);
-		/*}*/
+		
 		
 	}
 
@@ -162,9 +167,25 @@ void commit(char * dirName){
 
 void addOrRemoveFile(char *dirName,char *path,char command){
 
+
+
+        DIR* dir =opendir(dirName);
+        if(!dir){
+                closedir(dir);
+                printf("The project doesn't exist\n");
+                exit(1);
+
+        }
+
 int fSize;
 struct stat check;
 int fd=open(path,O_RDWR);
+if(fd==-1){
+
+	printf("File doesn't exist");
+	exit(1);
+
+}
 
 if(stat(path,&check)==0)
 	fSize=check.st_size;
@@ -249,7 +270,7 @@ for(k=0;k<arraySize-1;k++){
 }
 
 if(inManifest==0){
-	write(fd,"0",1);
+	write(fd,"1",1);
 	write(fd, " ",1);
 	write(fd,path,strlen(path));
 	write(fd," ",1);
@@ -294,16 +315,13 @@ chdir("..");
 void createProject(char *name,int sock){
 
 
-	DIR* dir = opendir("mydir");
+	DIR* dir = opendir(name);
 	if (dir)
 	{
     		/* Directory exists. */
     		closedir(dir);
-		printf("The project already exists");
-	}
-	else if (ENOENT == errno)
-	{
-    		/* Directory does not exist. */
+		printf("The project already exists\n");
+		exit(1);
 	}
 
 	mkdir(name, ACCESSPERMS);
@@ -323,6 +341,16 @@ void createProject(char *name,int sock){
 }
 
 void destroyProject(char *name,int sock){
+
+	DIR* dir =opendir(name);
+	if(!dir){
+		closedir(dir);
+		printf("The project doesn't exist\n");
+		exit(1);
+
+	}
+
+
 	char command[50];
 	strcpy(command,"rm -r ");
 	strcat(command,name);
@@ -349,7 +377,7 @@ int main(int argc, char ** argv)
 		return -1;
 	}
 
-	/*configure client*/
+	//configure client
 	if(strcmp(argv[1],"configure")==0){
 		if(argc!=4){
 			fprintf(stderr,"incorrect input amount");
@@ -400,10 +428,18 @@ int main(int argc, char ** argv)
 		return -5;
 	}
 
-	/* send text to server */
+	/* These handle the commands from the server*/
 	if(strcmp(argv[1],"push")==0){
+		
 		write(sock,"p",2);
 		
+        	DIR* dir =opendir(argv[2]);
+        	if(!dir){
+                	closedir(dir);
+                	printf("The project doesn't exist\n");
+                	exit(1);
+        	}
+
 		int pSize=strlen(argv[2]);
 		write(sock,&pSize,sizeof(int));
 		write(sock,argv[2],pSize);
@@ -415,7 +451,7 @@ int main(int argc, char ** argv)
 
 		if(fd==-1){
 			printf("must commit first");
-			return 1;
+			exit(1);
 		}
 
 		if(stat(".Commit",&check)==0)
@@ -425,13 +461,12 @@ int main(int argc, char ** argv)
 		*(man+mSize)='\0';
 		close(fd);
 
-		
-
 		remove(".Manifest");		
 		int fd3=open(".Manifest",O_CREAT | O_WRONLY, 0600);
 		write(fd3,man,mSize);
 		close(fd3);
 
+		remove(".Commit");		
 
 		chdir("..");
 		int length=0;
@@ -464,6 +499,7 @@ int main(int argc, char ** argv)
 			token=strtok(NULL," \n");
 	
 		}
+
 	}else if(strcmp(argv[1],"add")==0){
 		addOrRemoveFile(argv[2],argv[3],'a');
 	}else if(strcmp(argv[1],"remove")==0){
@@ -474,18 +510,41 @@ int main(int argc, char ** argv)
 		destroyProject(argv[2],sock);
 	}else if(strcmp(argv[1],"commit")==0){
 		commit(argv[2]);
-	}else if(strcmp(argv[1],"upgrade")==0){
-		write(sock,"u",2);
+	}else if(strcmp(argv[1],"history")==0){
+		
+
+        DIR* dir =opendir(argv[2]);
+        if(!dir){
+                closedir(dir);
+                printf("The project doesn't exist\n");
+                exit(1);
+
+        }
+
+
+		write(sock,"h",2);
 		int length=strlen(argv[2]);
 		
 		write(sock,&length,sizeof(int));
 		write(sock,argv[2],length);
 
-		read(sock,&length,sizeof(int));
-		char *file=(char*)malloc(sizeof(char)*length+1);
-		read(sock,file,length);
-		printf("%s\n",file);
+		int size;
+		read(sock,&size,sizeof(int));	
+		char *history=(char*)malloc(size+1);
+		*(history+size)='\0';
+		read(sock,history,size);
+		printf("%s\n",history);
 	}else if(strcmp(argv[1],"rollback")==0){
+
+
+        DIR* dir =opendir(argv[2]);
+        if(!dir){
+                closedir(dir);
+                printf("The project doesn't exist\n");
+                exit(1);
+
+        }
+
 		write(sock,"r",2);
 		int length=strlen(argv[2]);
 		int back=atoi(argv[3]);
@@ -495,7 +554,173 @@ int main(int argc, char ** argv)
 
 		write(sock,&back,sizeof(int));
 
+	}else if(strcmp(argv[1],"currentversion")==0){
 
+        	DIR* dir =opendir(argv[2]);
+        	if(!dir){
+                	closedir(dir);
+                	printf("The project doesn't exist\n");
+                	exit(1);
+
+        	}
+
+                write(sock,"v",2);
+                int length=strlen(argv[2]);
+
+                write(sock,&length,sizeof(int));
+                write(sock,argv[2],length);
+
+                int size;
+                read(sock,&size,sizeof(int));
+                char *version=(char*)malloc(size+1);
+                *(version+size)='\0';
+                read(sock,version,size);
+                printf("%s\n",version);
+
+	}else if(strcmp(argv[1],"upgrade")==0){
+
+        DIR* dir =opendir(argv[2]);
+        if(!dir){
+                closedir(dir);
+                printf("The project doesn't exist\n");
+                exit(1);
+
+        }
+                write(sock,"u",2);
+                int pSize=strlen(argv[2]);
+
+                write(sock,&pSize,sizeof(int));
+                write(sock,argv[2],pSize);
+
+               	int length;
+		read(sock,&length,sizeof(int));
+
+        int i;
+        for(i=0;i<length;i++){
+                int nSize;
+                read(sock,&nSize,sizeof(int));
+                char *path=(char*)malloc((nSize+1));
+                read(sock,path,nSize);
+		*(path+nSize)='\0';
+
+                int fSize;
+                read(sock,&fSize,sizeof(int));
+                char *file=(char*)malloc(fSize+1);
+                read(sock,file,fSize);
+		*(file+fSize)='\0';
+		
+		char dir[50];
+		strcpy(dir,argv[2]);
+		strcat(dir,"/");   
+		strcat(dir,path);
+		
+                remove(dir);
+                int fd=open(dir, O_CREAT | O_WRONLY, 0600);
+                if(fd==-1){ printf("failed to create file");}
+                write(fd,file,fSize);
+                close(fd);
+       } 
+
+        
+                
+        }else if(strcmp(argv[1],"update")==0){
+
+                DIR* dir =opendir(argv[2]);
+                if(!dir){
+                        closedir(dir);
+                        printf("The project doesn't exist\n");
+                        exit(1);
+
+                }
+
+                write(sock,"v",2);
+                int length=strlen(argv[2]);
+
+                write(sock,&length,sizeof(int));
+                write(sock,argv[2],length);
+
+                int size;
+                read(sock,&size,sizeof(int));
+                char *server=(char*)malloc(size+1);
+                *(server+size)='\0';
+                read(sock,server,size);
+
+		chdir(argv[2]);
+
+	
+        	int mSize;
+        	int fd=open(".Manifest", O_RDONLY);
+        	if(stat(".Manifest",&check)==0)
+                	mSize=check.st_size;
+        	char *man=(char*)malloc(sizeof(char)*mSize+1);
+        	read(fd,man,mSize);
+        	*(man+mSize)='\0';
+        	close(fd);
+
+		ComparingFiles(man,server);
+
+
+		chdir("..");
+
+	}else if(strcmp(argv[1],"checkout")==0){	
+
+
+	        DIR* dir = opendir(name);
+	        if (dir)
+	        {
+                /* Directory exists. */
+        	        closedir(dir);
+                	printf("The project already exists\n");
+               		exit(1);
+        	}
+		
+	        mkdir(argv[2], ACCESSPERMS);
+	        int size=strlen(argv[2]);
+	        chdir(argv[2]);
+	        int fd=open(".Manifest",O_CREAT | O_WRONLY, 0600);
+	        if(fd==-1){
+         	       printf("failed to make manifest");
+       	 	}
+        	write(fd,"0",1);
+        	write(fd,"\n",1);
+        	close(fd);
+        	chdir("..");
+
+                write(sock,"u",2);
+                int pSize=strlen(argv[2]);
+
+                write(sock,&pSize,sizeof(int));
+                write(sock,argv[2],pSize);
+
+                int length;
+                read(sock,&length,sizeof(int));
+
+        int i;
+        for(i=0;i<length;i++){
+                int nSize;
+                read(sock,&nSize,sizeof(int));
+                char *path=(char*)malloc((nSize+1));
+                read(sock,path,nSize);
+                *(path+nSize)='\0';
+
+                int fSize;
+                read(sock,&fSize,sizeof(int));
+                char *file=(char*)malloc(fSize+1);
+                read(sock,file,fSize);
+                *(file+fSize)='\0';
+
+                char dir[50];
+                strcpy(dir,argv[2]);
+                strcat(dir,"/");
+                strcat(dir,path);
+
+                remove(dir);
+                int fd=open(dir, O_CREAT | O_WRONLY, 0600);
+                if(fd==-1){ printf("failed to create file");}
+                write(fd,file,fSize);
+                close(fd);
+       }
+		
 	}
 	
 	/* close socket */
