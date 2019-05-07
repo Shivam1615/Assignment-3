@@ -198,27 +198,34 @@ void * process(void * ptr)
 		system(command);			
 
 		chdir("..");
-	}else if(strcmp(command,"u")==0){
+	}else if(strcmp(command,"h")==0){
 		int length;
 		read(conn->sock,&length,sizeof(int));
-		char *path=(char*)malloc((length+1)*sizeof(char));
-		read(conn->sock,path,length);
+		char *project=(char*)malloc((length+1)*sizeof(char));
+		read(conn->sock,project,length);
+
+	
 			
 		chdir(".server_repo");
+		chdir(project);
+	
 		struct stat check;
 		int size;
-		int fd=open(path, O_RDONLY,0600);
-		if(stat(path,&check)==0)
+		int fd=open(".History", O_RDONLY,0600);
+		if(stat(".History",&check)==0)
 			size=check.st_size;
 		char *file=(char*)malloc(sizeof(char)*size+1);
 		read(fd,file,size);
 		*(file+size)='\0';
-		close(fd);	
+		close(fd);		
+		
+		chdir("..");
+		chdir("..");
 
 		write(conn->sock,&size,sizeof(int));
-		write(conn->sock,file,size);	
 
-		chdir("..");
+		write(conn->sock,file,size);
+
 		
 	}else if(strcmp(command,"r")==0){
 
@@ -238,7 +245,125 @@ void * process(void * ptr)
 		chdir("..");
 		chdir("..");	
 		
-	}
+	}else if(strcmp(command,"v")==0){
+                int length;
+                read(conn->sock,&length,sizeof(int));
+                char *project=(char*)malloc((length+1)*sizeof(char));
+                read(conn->sock,project,length);
+                chdir(".server_repo");
+                chdir(project);
+		struct stat check;
+       		int vSize;
+        	int v=open(".Version", O_RDONLY);
+        	if(stat(".Version",&check)==0)
+                	vSize=check.st_size;
+        	char *vers=(char*)malloc(sizeof(char)*vSize+1);
+        	read(v,vers,vSize);
+        	*(vers+vSize)='\0';
+        	close(v);
+        	char *token=strtok(vers," \n");
+        	int x=atoi(token);
+        	char dir[15];
+        	char version[4];
+        	strcpy(version,"");
+                strcpy(dir,"version");
+                sprintf(version,"%d",x);
+                strcat(dir,version);
+		chdir(dir);		
+                int size;
+                int fd=open(".Manifest", O_RDONLY,0600);
+                if(stat(".Manifest",&check)==0)
+                        size=check.st_size;
+                char *file=(char*)malloc(sizeof(char)*size+1);
+                read(fd,file,size);
+                *(file+size)='\0';
+                close(fd);
+                chdir("..");
+                chdir("..");
+		chdir("..");
+                write(conn->sock,&size,sizeof(int));
+                write(conn->sock,file,size);
+        }else if(strcmp(command,"u")==0){
+                int length;
+                read(conn->sock,&length,sizeof(int));
+                char *project=(char*)malloc((length+1)*sizeof(char));
+                read(conn->sock,project,length);
+                chdir(".server_repo");
+                chdir(project);
+                struct stat check;
+                int vSize;
+                int v=open(".Version", O_RDONLY);
+                if(stat(".Version",&check)==0)
+                        vSize=check.st_size;
+                char *vers=(char*)malloc(sizeof(char)*vSize+1);
+                read(v,vers,vSize);
+                *(vers+vSize)='\0';
+                close(v);
+                char *token=strtok(vers," \n");
+                int x=atoi(token);
+                char dir[15];
+                char version[4];
+                strcpy(version,"");
+                strcpy(dir,"version");
+                sprintf(version,"%d",x);
+                strcat(dir,version);
+                chdir(dir);	
+
+                int size;
+                int fd=open(".Manifest", O_RDONLY,0600);
+                if(stat(".Manifest",&check)==0)
+                        size=check.st_size;
+                char *file=(char*)malloc(sizeof(char)*size+1);
+                read(fd,file,size);
+                *(file+size)='\0';
+                close(fd);
+
+		length=0;
+                int i;
+                for(i=0;i<size-1;i++){
+
+                        if(file[i]=='\n'){
+                        length++;
+                        }
+
+                }
+                length--;
+
+		write(conn->sock,&length,sizeof(int));
+
+		token=strtok(file, " \n");
+                token=strtok(NULL," \n");
+                while(token){
+                        token=strtok(NULL," \n");
+
+			char *name=&token[strlen(project)+1];
+
+       		 	int nSize=strlen(name);
+        		write(conn->sock,&nSize,sizeof(int));
+        		write(conn->sock,name,nSize);
+
+        		int fSize;
+        		struct stat check;
+        		int fd=open(name, O_RDONLY);
+        		if(stat(name,&check)==0)
+                		fSize=check.st_size;
+        		char *file=(char*)malloc(fSize+1);
+        		read(fd,file,fSize);
+        		*(file+fSize)='\0';
+        		close(fd);
+
+        		write(conn->sock,&fSize,sizeof(int));
+	        	write(conn->sock,file,fSize);
+
+                        token=strtok(NULL," \n");
+                        token=strtok(NULL," \n");
+
+                }
+
+                chdir("..");
+                chdir("..");
+                chdir("..");
+        }
 	
 	/* close socket and clean up */
 	close(conn->sock);
