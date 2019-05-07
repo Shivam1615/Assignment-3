@@ -1,0 +1,41 @@
+NETID: srp218,  dsg126
+
+Owners: Shivam Patel, Dhanush Gandham
+
+
+				                                       Where’s The File Readme.pdf
+
+	Overall Work: For this project, we had to learn how to use mutexes and locks in order to be able to access one thread at 
+  a time. This project involved creating two projects; one of them was creating WTFserver.c and another was creating a WTF.c 
+  client program. We essentially had to create a git/version control system that has to find where a file is in a system. This 
+  file was created in a .Manifest file and this kept track of all our versions and hash contents along with the files in the 
+  directory. There were 12 Client commands that we had to do in order to be able to run our program and find our file. Some 
+  examples of how we have to implement our programs were adding the project, removing the project, checkout, configure, etc. 
+  The main objective for this project was to be able to learn how to use server and clients. 
+
+	Objective 1: For our project, we send files from client to server or we send strings/messages in order to be able to 
+  communicate between the two programs. Also, we had to make a .Manifest file and was able to compare with the files in the 
+  server in order to see which version had the most recent up to date or had the oldest version and then had to update it 
+  according to the commands. Also, we had to push files from client to server so that we could be able to change it according 
+  to what the manifest file has.
+
+	Objective 2: In order to be able to store the information from one file to another, I created a tokenizer and then be able 
+  to parse the files by files in order to read from the Manifest files and the files from the server. Then I store all of the 
+  informations into several parallel arrays in order to be able to compare all of the version numbers, the filenames, and the 
+  hash contents. We parsed with the hash content using the Sha1 method and this essentially checked to see if the files have 
+  any minor or major changes in order to be able to see the most updated version and be able to see what needs to be changed. 
+
+  Objective 3: Other important things that we had to accomplish is to be able to check if the project was in the 
+  server or if it’s not in the client and the server. Also, we update our file based on whether it is modified, u
+  ploaded from the client to the server, added from server to the client, and then be able to delete files that 
+  were only in the client and not the server. 
+
+	Objective 4 Data Structure Implementation: We mainly used the array implementation in order to be able to store the 
+  information in the array and then we used the arrays in order to be able to check if the information is similar to the 
+  Manifest file and then used the commands required in order to be able to accomplish what the assignment description required 
+  us to do. 
+
+	Objective 5 efficiency: Our implementation was using arrays, so our implementation was a big O of O(n) because we had to 
+  search and parse through the entire array and check from the beginning index all the way to the end of the index in order 
+  to check if the information from one file to another is the same. If it is the same, then I would write through the new 
+  .Manifest file the new updated information based on the tags from UMAD.
