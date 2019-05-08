@@ -1,85 +1,58 @@
-Shivam Patel
+[dsg126@man Asst3]$ ./WTF configure localhost 1260
+configure succesful
+[dsg126@man Asst3]$ ./WTF create project1
+project created
+[dsg126@man Asst3]$ ./WTF create project1
+The project already exists
+[dsg126@man Asst3]$ vim project1/file1.txt
+[dsg126@man Asst3]$ vim project1/file2.txt
+[dsg126@man Asst3]$ ./WTF add project1 project1/file1.txt
+file added to manifest
+[dsg126@man Asst3]$ ./WTF add project1 project1/file2.txt
+file added to manifest
+[dsg126@man Asst3]$ ./WTF history project1
+create: 0
 
-Dhanush Gandham
+[dsg126@man Asst3]$ ./WTF commit project1
+.Commit file created
+[dsg126@man Asst3]$ ./WTF push project1
+Pushed project to server
+[dsg126@man Asst3]$ ./WTF history project1
+create: 0
+push:1
 
-Test Cases
----------------------------------------------------------
+[dsg126@man Asst3]$ ./WTF currentversion project1
+1
+1 project1/file1.txt 9801739daae44ec5293d4e1f53d3f4d2d426d91c
+1 project1/file2.txt 3cbd273cfb73d2ad9ed9df143f52e1c8d8bdd6c9
 
-INPUT: ./WTF configure kill.cs.rutgers.edu 9876
 
-CLIENT OUPUT: Success
+[dsg126@man Asst3]$ vim project1/file1.txt
+[dsg126@man Asst3]$ vim project1/file2.txt
+[dsg126@man Asst3]$ ./WTF push project1
+must commit first
+[dsg126@man Asst3]$ ./WTF commit project1
+.Commit file created
+[dsg126@man Asst3]$ ./WTF push project1
+Pushed project to server
+[dsg126@man Asst3]$ ./WTF currentversion project1
+2
+2 project1/file1.txt 94cf2094c4dfa22db3aa7c5307451159f2e22739
+2 project1/file2.txt 6bbae1246799cc48122a1866d598e1080a91949d
 
----------------------------------------------------------
+[dsg126@man Asst3]$ ./WTF rollback project1 1
+rolled back to version: 1
+[dsg126@man Asst3]$ ./WTF history project1
+create: 0
+push:1
+push:2
+Rollback:1
 
-INPUT: ./WTF create project1
-
-CLIENT OUTPUT:  Successfully created.
-
----------------------------------------------------------
-
-INPUT: ./client add project1 project1/file1.txt
-
-CLIENT OUTPUT: Successfully added the project.
-
----------------------------------------------------------
-
-INPUT: ./client add project1 project1/file1.txt
-
-CLIENT OUTPUT: File name already exists.
-
----------------------------------------------------------
-
-INPUT: ./client destroy project1
-
-CLIENT OUTPUT: Successfully destroyed.
-
----------------------------------------------------------
-
-INPUT: ./client destroy project1
-
-CLIENT OUTPUT: Project already exists.
-
----------------------------------------------------------
-INPUT: ./client commit project1
-
-CLIENT OUTPUT: Successfully commit.
-
----------------------------------------------------------
-
-INPUT: ./client push project1
-
-CLIENT OUTPUT: Project pushed.
-
----------------------------------------------------------
-INPUT: ./client history project1
-
-CLIENT OUTPUT: create:0
-                push:1
-
----------------------------------------------------------
-
-INPUT: ./client commit project1
-
-CLIENT OUTPUT: Project commited.
-
----------------------------------------------------------
-INPUT: ./client push project1
-
-CLIENT OUTPUT: Successfully push.
-
----------------------------------------------------------
-
-INPUT: ./client rollback project1 1
-
-CLIENT OUTPUT: rolled back.
-
----------------------------------------------------------
-INPUT: ./client history project1
-
-CLIENT OUTPUT: create:0
-                push:1
-                push:2
-                rollback:1
-
-----------------------------------------------------------
-
+[dsg126@man Asst3]$ ./WTF update project1
+update file made
+[dsg126@man Asst3]$ ./WTF upgrade project1
+client project upgraded
+[dsg126@man Asst3]$ ./WTF destroy project1
+project is deleted
+[dsg126@man Asst3]$ ./WTF destroy project1
+The project already exists
